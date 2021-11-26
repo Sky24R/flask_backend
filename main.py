@@ -10,7 +10,6 @@ CORS(app, supports_credentials=True)#初始化的时候加载配置，这样就�
 import subprocess
 
 filename = "D:/DOC/enprictice/resources/data/meter1.mp4"
-
 global CAP
 global FIRST
 FIRST =True
@@ -18,14 +17,12 @@ global selX
 global selY
 selX = 234
 selY = 254
-
 global CAP_PC
 global FRAME
 global FRAME_PC
 global CLED
 CLED ='绿色'
 global LAST_FRAME
-
 LAST_FRAME = None
 global LAST_FRAME_PC
 LAST_FRAME_PC =None
@@ -34,7 +31,6 @@ import subprocess as sp
 import cv2
 
 rtmpUrl = "rtmp://47.97.217.228:1935/live/302"
-
 # 获取摄像头参数
 fps = 20
 width = 500
