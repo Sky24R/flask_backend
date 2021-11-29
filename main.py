@@ -32,22 +32,10 @@ import cv2
 
 rtmpUrl = "rtmp://47.97.217.228:1935/live/302"
 # 获取摄像头参数
-fps = 20
-width = 500
-height = 400
-command = ['ffmpeg',
-           '-y',
-           '-f', 'rawvideo',
-           '-vcodec', 'rawvideo',
-           '-pix_fmt', 'bgr24',
-           '-s', "{}x{}".format(width, height),
-           '-r', str(fps),
-           '-i', '-',
-           '-c:v', 'libx264',
-           '-pix_fmt', 'yuv420p',
-           '-preset', 'ultrafast',
-           '-f', 'flv',
-           rtmpUrl]
+# fps = 20
+# width = 500
+# height = 400
+
 
 
 
@@ -72,8 +60,25 @@ def gen():
 
         print('初始化')
         CAP = cv2.VideoCapture(filename)
-        CAP_PC = cv2.VideoCapture(1)
+        CAP_PC = cv2.VideoCapture(0)
         FIRST = False
+        fps = int(CAP.get(cv2.CAP_PROP_FPS))
+        width = int(CAP.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(CAP.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+        command = ['ffmpeg',
+                   '-y',
+                   '-f', 'rawvideo',
+                   '-vcodec', 'rawvideo',
+                   '-pix_fmt', 'bgr24',
+                   '-s', "{}x{}".format(width, height),
+                   '-r', str(fps),
+                   '-i', '-',
+                   '-c:v', 'libx264',
+                   '-pix_fmt', 'yuv420p',
+                   '-preset', 'ultrafast',
+                   '-f', 'flv',
+                   rtmpUrl]
         P = subprocess.Popen(command, stdin=subprocess.PIPE)
 
     while True:
@@ -136,9 +141,9 @@ def gen():
 
             # 计算轮廓的边界框，在当前帧中画出该框
             (x, y, w, h) = cv2.boundingRect(c)
-            cv2.rectangle(FRAME_PC, (x, y), (x + w, y + h), (0, 255, 0), 2)
-
-            cv2.imwrite(path + '/' + times + '_' + str(num) + '.jpg', FRAME_PC)
+            cv2.rectangle(FRAME, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            cv2.imwrite(path + '/' + times + '_' + str(num) + '.jpg', FRAME)
+            cv2.imwrite(path + '/' + times + '_' + str(num) + '_PC' + '.jpg', FRAME_PC)
             print('success')
             num += 1
 
