@@ -29,6 +29,12 @@ LAST_FRAME_PC =None
 global P
 import subprocess as sp
 import cv2
+import torch
+import torchvision.transforms as transforms
+from PIL import Image #用于读取数据
+from model_lenet import LeNet
+from led_nums import pred_nums,cutbyexpand
+
 
 rtmpUrl = "rtmp://47.97.217.228:1935/live/302"
 # 获取摄像头参数
@@ -37,8 +43,19 @@ rtmpUrl = "rtmp://47.97.217.228:1935/live/302"
 # height = 400
 
 
-
-
+def detcstmodel():
+    classes = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', 'A', 'C', 'E', 'F', 'H', 'L', 'P']
+    model = LeNet()
+    model.load_state_dict(torch.load('./model/net_020.pth'))
+    img = Image.open('001.jpg').convert('RGB')  # 返回PIL类型数据
+    img = img.convert('L')
+    transform = transforms.Compose([transforms.ToTensor()])
+    img = transform(img).unsqueeze(0)
+    # img_ = img.to(device)
+    outputs = model(img)
+    _, predicted = torch.max(outputs, 1)
+    # print(predicted)
+    print('识别结果为 :', classes[predicted[0]])
 
 
 @app.route('/getMsg', methods=['GET', 'POST'])
@@ -96,7 +113,7 @@ def gen():
 
         print('读帧')
 
-        #P.stdin.write(FRAME.tobytes())#推流
+        #P.stdin.write(FRAME.tobytes())#向服务器推流
 
         arr = [selX,selY]
         CLED = detection(FRAME, arr)#指示灯处理
@@ -198,8 +215,27 @@ def select():
 
     return jsonify('ok')
 
+@app.route('/detectChar', methods=['GET','POST'])
+def detectChar():
+
+    if request.method == 'POST':
+        charimg = request.form.get('charimg')
+        print("charimg")
+        img_data = base64.b64decode(charimg)
+        #print("img_data",img_data)
+        with open('001.jpg', 'wb') as f:
+            f.write(img_data)
 
 
+    return jsonify('ok')
+
+@app.route('/getresult', methods=['GET','POST'])
+def getresult():
+    img = cv2.imread('001.jpg')
+    nums = pred_nums(img)
+    #nums = cutbyexpand(img)
+    print('预测结果为：', nums)
+    return jsonify({'res':nums})
 # 启动运行
 if __name__ == '__main__':
     app.run()   # 这样子会直接运行在本地服务器，也即是 localhost:5000
