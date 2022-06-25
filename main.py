@@ -27,6 +27,7 @@ LAST_FRAME = None
 global LAST_FRAME_PC
 LAST_FRAME_PC =None
 global P
+global flag
 import subprocess as sp
 import cv2
 import torch
@@ -72,9 +73,16 @@ def gen():
     CLED = '绿色'
     print('开始')
     global P
+    global flag
 
+
+    if request.method == 'POST':
+        flag = request.form.get('preflag')
+        return jsonify(flag)
+
+    print(flag)
     if FIRST: #第一次请求
-
+        print('开始')
         print('初始化')
         CAP = cv2.VideoCapture(filename)
         CAP_PC = cv2.VideoCapture(0)
@@ -114,56 +122,57 @@ def gen():
         print('读帧')
 
         #P.stdin.write(FRAME.tobytes())#向服务器推流
+        if flag:
+            print('检测')
+            arr = [selX,selY]
+            CLED = detection(FRAME, arr)#指示灯处理
+            FRAME_PC = cv2.resize(FRAME_PC, (500, 400), interpolation=cv2.INTER_CUBIC)
+            # 使用generator函数输出视频流， 每次请求输出的content类型是image/jpeg
+            FRAME = cv2.resize(FRAME, (500, 400), interpolation=cv2.INTER_CUBIC)
+            tmp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+            day, times = tmp.split(' ')
+            day = day.replace(':', '-')
+            times = times.replace(':', '-')
+            path = './img/' + day
+            if not os.path.exists(path):
+                os.makedirs(path)
 
-        arr = [selX,selY]
-        CLED = detection(FRAME, arr)#指示灯处理
-        FRAME_PC = cv2.resize(FRAME_PC, (500, 400), interpolation=cv2.INTER_CUBIC)
-        # 使用generator函数输出视频流， 每次请求输出的content类型是image/jpeg
-        FRAME = cv2.resize(FRAME, (500, 400), interpolation=cv2.INTER_CUBIC)
-        tmp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-        day, times = tmp.split(' ')
-        day = day.replace(':', '-')
-        times = times.replace(':', '-')
-        path = './img/' + day
-        if not os.path.exists(path):
-            os.makedirs(path)
-
-        if LAST_FRAME is None:
-            LAST_FRAME = FRAME.copy()
-            continue
-
-        # 计算当前帧和前帧的不同
-        frameDelta = cv2.absdiff(LAST_FRAME, FRAME)
-
-        # 当前帧设置为下一帧的前帧
-        LAST_FRAME = FRAME.copy()
-        LAST_FRAME_PC = FRAME_PC.copy()
-
-        # 结果转为灰度图
-        thresh = cv2.cvtColor(frameDelta, cv2.COLOR_BGR2GRAY)
-
-        # 图像二值化
-        thresh = cv2.threshold(thresh, 20, 255, cv2.THRESH_BINARY)[1]
-
-        # 去除图像噪声,先腐蚀再膨胀(形态学开运算)
-        thresh = cv2.erode(thresh, None, iterations=1)
-        thresh = cv2.dilate(thresh, None, iterations=2)
-        cnts, hierarchy = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        # 遍历轮廓
-        num=0
-        for c in cnts:
-            # 忽略小轮廓，排除误差
-
-            if cv2.contourArea(c) < 100:
+            if LAST_FRAME is None:
+                LAST_FRAME = FRAME.copy()
                 continue
 
-            # 计算轮廓的边界框，在当前帧中画出该框
-            (x, y, w, h) = cv2.boundingRect(c)
-            cv2.rectangle(FRAME, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            cv2.imwrite(path + '/' + day + '-' + times + '_' + str(num) + '.jpg', FRAME)
-            cv2.imwrite(path + '/' + day + '-' + times + '_' + str(num) + '_PC' + '.jpg', FRAME_PC)
-            print('success')
-            num += 1
+            # 计算当前帧和前帧的不同
+            frameDelta = cv2.absdiff(LAST_FRAME, FRAME)
+
+            # 当前帧设置为下一帧的前帧
+            LAST_FRAME = FRAME.copy()
+            LAST_FRAME_PC = FRAME_PC.copy()
+
+            # 结果转为灰度图
+            thresh = cv2.cvtColor(frameDelta, cv2.COLOR_BGR2GRAY)
+
+            # 图像二值化
+            thresh = cv2.threshold(thresh, 20, 255, cv2.THRESH_BINARY)[1]
+
+            # 去除图像噪声,先腐蚀再膨胀(形态学开运算)
+            thresh = cv2.erode(thresh, None, iterations=1)
+            thresh = cv2.dilate(thresh, None, iterations=2)
+            cnts, hierarchy = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            # 遍历轮廓
+            num=0
+            for c in cnts:
+                # 忽略小轮廓，排除误差
+
+                if cv2.contourArea(c) < 100:
+                    continue
+
+                # 计算轮廓的边界框，在当前帧中画出该框
+                (x, y, w, h) = cv2.boundingRect(c)
+                cv2.rectangle(FRAME, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                cv2.imwrite(path + '/' + day + '-' + times + '_' + str(num) + '.jpg', FRAME)
+                cv2.imwrite(path + '/' + day + '-' + times + '_' + str(num) + '_PC' + '.jpg', FRAME_PC)
+                print('success')
+                num += 1
 
         ret, jpeg = cv2.imencode('.jpg', FRAME)
         img_stream = base64.b64encode(jpeg).decode()
