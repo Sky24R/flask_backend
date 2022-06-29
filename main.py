@@ -28,7 +28,7 @@ LAST_FRAME = None
 global LAST_FRAME_PC
 LAST_FRAME_PC =None
 global P
-global flag
+flag=False
 import subprocess as sp
 import cv2
 import torch
@@ -78,10 +78,13 @@ def gen():
 
 
     if request.method == 'POST':
+
         flag = request.form.get('preflag')
+
         return jsonify(flag)
 
     print(flag)
+
     if FIRST: #第一次请求
         print('开始')
         print('初始化')
