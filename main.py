@@ -8,6 +8,7 @@ import time
 import os
 CORS(app, supports_credentials=True)#初始化的时候加载配置，这样就可以支持跨域访问
 import subprocess
+import requests
 
 filename = "D:/DOC/enprictice/resources/data/meter1.mp4"
 global CAP
@@ -230,11 +231,11 @@ def detectChar():
     if request.method == 'POST':
         charimg = request.form.get('charimg')
         print("charimg")
+
         img_data = base64.b64decode(charimg)
         #print("img_data",img_data)
         with open('001.jpg', 'wb') as f:
             f.write(img_data)
-
 
     return jsonify('ok')
 
@@ -245,6 +246,29 @@ def getresult():
     #nums = cutbyexpand(img)
     print('预测结果为：', nums)
     return jsonify({'res':nums})
+
+@app.route('/ocr' , methods=('GET', 'POST'))
+def ocr():
+    import json
+    if request.method == 'POST':
+        # print("request ",request)
+        # img_up = request.form.get('file')
+        # print("img_up ",img_up)
+        #
+        # compress = request.form.get('file')
+        # print("compress ", compress)
+        #
+        # img = img_up.read()
+        # import base64
+        # img=base64.b64encode(img)
+        charimg = request.form.get('charimg')
+        print("charimg")
+        url = 'http://192.168.1.132:8089/api/tr-run/'
+        res = requests.post(url=url, data={'img': charimg})
+
+        return res.text
+
+
 # 启动运行
 if __name__ == '__main__':
     app.run()   # 这样子会直接运行在本地服务器，也即是 localhost:5000
