@@ -72,18 +72,19 @@ def gen():
     global LAST_FRAME_PC
     global CLED
     CLED = '绿色'
-    print('开始')
     global P
     global flag
 
 
     if request.method == 'POST':
 
-        flag = request.form.get('preflag')
-
+        vueflag = request.form.get('preflag')
+        flag= vueflag
+        #print("..................")
+        #print(flag)
         return jsonify(flag)
 
-    print(flag)
+    #print(flag)
 
     if FIRST: #第一次请求
         print('开始')
@@ -112,8 +113,6 @@ def gen():
         #P = subprocess.Popen(command, stdin=subprocess.PIPE)
 
     while True:
-
-
         success, FRAME = CAP.read()
 
         if not success:
@@ -266,7 +265,7 @@ def ocr():
         # img=base64.b64encode(img)
         charimg = request.form.get('charimg')
         print("charimg")
-        url = 'http://192.168.1.132:8089/api/tr-run/'
+        url = 'http://192.168.1.129:8089/api/tr-run/'
         res = requests.post(url=url, data={'img': charimg})
 
         return res.text
